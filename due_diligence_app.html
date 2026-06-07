@@ -14,6 +14,14 @@
   <!-- Marked.js CDN for Markdown Parsing -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
+  <!-- PDF.js CDN for direct PDF text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <!-- SheetJS CDN for direct Excel sheets parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- html-docx-js CDN for generating DOCX files -->
+  <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
     body {
@@ -181,7 +189,7 @@
             <label class="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors shadow-sm">
               <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
               Upload Files
-              <input id="file-uploader" type="file" multiple class="hidden" onchange="handleFileUpload(event)" />
+              <input id="file-uploader" type="file" multiple accept=".pdf,.xlsx,.xls,.txt,.md,.csv" class="hidden" onchange="handleFileUpload(event)" />
             </label>
           </div>
         </div>
@@ -277,6 +285,40 @@
             </div>
           </div>
         </div>
+
+        <!-- Phase 4 status -->
+        <div class="flex items-start gap-4 border-t border-slate-100 pt-6">
+          <div class="mt-1 shrink-0" id="phase4-status-icon">
+            <i data-lucide="circle" class="w-6 h-6 text-slate-300"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-base md:text-lg text-slate-500" id="phase4-title">
+              Phase 4: Legal Risk & Corporate Governance
+            </h3>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">IP chain of title, cap table mechanics, contractor compliance, and liability exposures.</p>
+            <div id="phase4-activity" class="hidden mt-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs md:text-sm text-indigo-800 flex items-center gap-2">
+              <div class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></div>
+              Executing 3-pass legal audit & drafting mitigation playbook...
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 5 status -->
+        <div class="flex items-start gap-4 border-t border-slate-100 pt-6">
+          <div class="mt-1 shrink-0" id="phase5-status-icon">
+            <i data-lucide="circle" class="w-6 h-6 text-slate-300"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-base md:text-lg text-slate-500" id="phase5-title">
+              Phase 5: Financial Underwriting & Burn Verification
+            </h3>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">Runway calculations, balance sheet liabilities, customer concentration, and stress testing.</p>
+            <div id="phase5-activity" class="hidden mt-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs md:text-sm text-indigo-800 flex items-center gap-2">
+              <div class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></div>
+              Verifying financial models & assessing underwriting standards...
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -293,6 +335,12 @@
             class="px-4 py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-2"
           >
             <i data-lucide="edit-3" class="w-4 h-4"></i> Edit Workspace
+          </button>
+          <button 
+            onclick="downloadDocx()"
+            class="px-4 py-2 text-xs md:text-sm font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 flex items-center gap-2 transition-all shadow-sm"
+          >
+            <i data-lucide="download" class="w-4 h-4"></i> Download .docx
           </button>
           <button 
             onclick="triggerAnalysis()"
@@ -316,6 +364,9 @@
     const API_KEY = ""; 
     // Gemini 3 Flash is ideal for grounded web queries
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`;
+
+    // Configure PDFJS Worker URL globally
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
     const DATA_ROOM_CATEGORIES = [
       { id: 'pitch_deck', name: 'Pitch Deck', icon: 'presentation' },
@@ -350,6 +401,66 @@
         focus: 'Executive track record, team cohesion, critical talent gaps, and key-person execution dependency.',
         inputs: 'Executive biographies, past exit records, organizational charts, key employment agreements.',
         promptTemplate: (companyContext, companyName) => `Act as an organizational behavior consultant. Evaluate the leadership team of ${companyName} based on the provided data room contents. Review the backgrounds of key founders/executives (CEO, CTO, CFO). Analyze their combined domain experience, past exit history, and execution track record. Highlight any critical organizational talent gaps, key-person dependency risks, or misalignments in equity.\n\nCompany Context/Data Room Information:\n${companyContext}`
+      },
+      {
+        id: 'phase4',
+        title: 'Phase 4: Legal Risk & Corporate Governance',
+        icon: 'scale',
+        focus: 'IP chain of title, Cap Table mechanics, HR compliance, and corporate governance exposures.',
+        inputs: 'Certificates of Incorporation, Bylaws, SAFEs, PIIAs, Cap Table.',
+        promptTemplate: (companyContext, companyName) => `=== SYSTEM PROMPT ===
+You are an expert M&A Corporate Attorney, Legal QA Validator, and General Counsel for a Venture Capital fund. Your task is to execute a rigorous 3-pass legal due diligence audit on ${companyName} strictly using the provided documents.
+
+RULES OF ENGAGEMENT:
+1. ZERO INFERENCE: If a document or clause is missing, explicitly state "OMITTED / NOT FOUND".
+2. NO PARAPHRASING: Extract verbatim quotes for agreements and board consents.
+3. ADVERSARIAL SKEPTICISM: Treat every positive claim as false until verified by a signed, unredacted document. Check for missing signatures.
+
+EXECUTION PIPELINE:
+Pass 1 (Extraction): Audit IP Chain of Title (PIIAs), Cap Table Mechanics (SAFEs/Notes), HR misclassifications, and Corporate Governance (Delaware C-Corp, Privacy).
+Pass 2 (Verification): Cross-reference findings. Check for carve-outs ("subject to board approval"), missing signatures, and hidden MFN clauses.
+Pass 3 (Underwriting): Map findings against our fund policies:
+- Policy 1 (IP): Unassigned IP is a deal-killer.
+- Policy 2 (Cap Table): Post-money SAFEs must be factored into pre-money math.
+- Policy 3 (HR): Full-time contractors must be W-2. Deferred comp must be paid by founders.
+
+=== USER PROMPT ===
+Execute the 3-Pass Audit and output your final findings as a Strategic Legal Playbook in a Markdown table:
+| Flagged Issue | Current Verification Finding (with Verbatim Quotes) | Playbook Status (COMPLIANT/NON-COMPLIANT) | Exposure/Impact Analysis | SPA Condition Precedent / Required Pre-Close Remedy | Recommended Redline/Warrant Language |
+
+Company Context/Data Room Information:
+${companyContext}`
+      },
+      {
+        id: 'phase5',
+        title: 'Phase 5: Financial Underwriting & Burn Verification',
+        icon: 'line-chart',
+        focus: 'Financial projections, burn rate verification, balance sheet liabilities, and customer concentration.',
+        inputs: '3-Year Financial Model, P&L, balance sheets, customer ledger.',
+        promptTemplate: (companyContext, companyName) => `=== SYSTEM PROMPT ===
+You are an expert Forensic Accountant, Financial Auditor, and VC Chief Risk Officer. Execute a rigorous 3-pass financial due diligence audit on ${companyName} strictly using the provided documents.
+
+RULES OF ENGAGEMENT:
+1. NO MODEL OPTIMISM: Ignore qualitative pitch deck narratives. Base extraction strictly on math.
+2. MISSING DATA EXPOSURE: Flag missing debt schedules or customer ledgers as "DATA GAP IDENTIFIED".
+3. STRICT MATHEMATICS: Calculate Post-Investment Runway as (Current Cash + Target Investment) / Net Burn. Net burn is trailing 3-month average.
+
+EXECUTION PIPELINE:
+Pass 1 (Extraction): Extract historical/projected MoM/YoY growth, monthly Gross/Net burn, cash balance, founder debt, and top 3 customer revenue.
+Pass 2 (Verification): Recalculate runway. Flag if growth projection > 1.5x historical average. Calculate Customer Concentration % (Top Client / Total Rev).
+Pass 3 (Underwriting): Evaluate against our underwriting standards:
+- Standard 1: Growth cannot accelerate >20% post-round without verified pipeline.
+- Standard 2: Post-round runway must be >= 18 months.
+- Standard 3: Angel capital cannot pay founder debt.
+- Standard 4: No single customer > 25% of trailing revenue.
+
+=== USER PROMPT ===
+Execute the 3-Pass Audit and output your final report as a Financial Underwriting Matrix in a Markdown table:
+| Underwriting Standard | Target verified metric | Compliance Status (COMPLIANT/NON-COMPLIANT) | Stress Test Survival Margin (assuming 30% revenue drop) | Required Milestone Trigger or Covenant | Underwriter Risk Assessment & Rationale |
+
+Assume a standard market rate target investment size if not explicitly stated in the context.
+Company Context/Data Room Information:
+${companyContext}`
       }
     ];
 
@@ -435,7 +546,7 @@
             </div>
             <p class="text-sm font-medium text-slate-700">No files in ${selectedCategory.name}</p>
             <p class="text-xs mt-1 text-slate-500 max-w-sm">
-              Upload files (.txt, .md, .csv) or create a blank note to paste information directly.
+              Upload files (.pdf, .xlsx, .txt, .csv, .md) or create a blank note to paste information directly.
             </p>
           </div>
         `;
@@ -479,20 +590,67 @@
       lucide.createIcons();
     }
 
-    // Helper to read and extract data room documents
+    // Extract text from PDFs using PDF.js client-side parser
+    async function extractTextFromPDF(arrayBuffer) {
+      const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+      const pdf = await loadingTask.promise;
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map(item => item.str).join(' ');
+        fullText += `--- Page ${i} ---\n${pageText}\n\n`;
+      }
+      return fullText.trim();
+    }
+
+    // Extract table structures from Excel sheets using SheetJS to structured Markdown/CSV formatting
+    function extractTextFromXLSX(arrayBuffer) {
+      const data = new Uint8Array(arrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      let fullText = '';
+      workbook.SheetNames.forEach(sheetName => {
+        const worksheet = workbook.Sheets[sheetName];
+        const csvContent = XLSX.utils.sheet_to_csv(worksheet);
+        fullText += `--- Sheet: ${sheetName} ---\n${csvContent}\n\n`;
+      });
+      return fullText.trim();
+    }
+
+    // General file read router
     function readFileAsText(file) {
       return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          let text = e.target.result;
-          // Clean non-printable block signs if PDF raw binary got uploaded directly
-          if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-            text = `[PDF Context Detected: ${file.name}]\n\nDirect PDF parsing is limited within pure browser clients. Please consider manually pasting text slides below for the most thorough analysis.\n\n--- Partially Extracted Data ---\n` + text.substring(0, 1500) + `... [TRUNCATED]`;
-          }
-          resolve(text);
-        };
-        reader.onerror = () => resolve(`[Failed to read contents of ${file.name}]`);
-        reader.readAsText(file);
+        const extension = file.name.split('.').pop().toLowerCase();
+
+        if (extension === 'pdf') {
+          reader.onload = async (e) => {
+            try {
+              const text = await extractTextFromPDF(e.target.result);
+              resolve(text || `[Document ${file.name} is empty or has non-extractable elements]`);
+            } catch (err) {
+              resolve(`[Error parsing PDF ${file.name}: ${err.message}]`);
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        } else if (extension === 'xlsx' || extension === 'xls') {
+          reader.onload = (e) => {
+            try {
+              const text = extractTextFromXLSX(e.target.result);
+              resolve(text || `[Excel file ${file.name} has no content]`);
+            } catch (err) {
+              resolve(`[Error parsing Excel file ${file.name}: ${err.message}]`);
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        } else {
+          // Plain Text fallback (TXT, CSV, MD)
+          reader.onload = (e) => {
+            resolve(e.target.result);
+          };
+          reader.onerror = () => resolve(`[Failed to read contents of ${file.name}]`);
+          reader.readAsText(file);
+        }
       });
     }
 
@@ -834,6 +992,66 @@
         updateWorkspaceView();
       }
       window.scrollTo(0, 0);
+    }
+
+    // Export report to .docx file
+    function downloadDocx() {
+      const chaptersContainer = document.getElementById('report-chapters-container');
+      if (!chaptersContainer || !chaptersContainer.innerHTML.trim()) return;
+
+      // Create a structured HTML representation for the DOCX parser with Word-compatible styling
+      const html = `<!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Diligence Report: ${state.companyName}</title>
+        <style>
+          body { font-family: 'Arial', sans-serif; color: #333; line-height: 1.6; }
+          h1 { color: #1e293b; font-size: 24pt; margin-bottom: 10px; }
+          h2 { color: #1e293b; font-size: 18pt; margin-top: 20px; margin-bottom: 10px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+          h3 { color: #334155; font-size: 14pt; margin-top: 15px; margin-bottom: 8px; }
+          p { margin-bottom: 10px; font-size: 11pt; }
+          ul, ol { margin-bottom: 15px; padding-left: 20px; }
+          li { margin-bottom: 5px; font-size: 11pt; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; }
+          th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-size: 10pt; }
+          th { background-color: #f8fafc; font-weight: bold; }
+          a { color: #4f46e5; text-decoration: none; }
+        </style>
+      </head>
+      <body>
+        <h1>Diligence Report: ${state.companyName}</h1>
+        <p><strong>Industry:</strong> ${state.industry}</p>
+        <hr>
+        ${chaptersContainer.innerHTML}
+      </body>
+      </html>`;
+
+      const safeFileName = state.companyName.replace(/\s+/g, '_') || 'Target';
+
+      // If htmlDocx is available, use it for true .docx formatting
+      if (typeof htmlDocx !== 'undefined') {
+        const converted = htmlDocx.asBlob(html);
+        const url = URL.createObjectURL(converted);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${safeFileName}_Diligence_Report.docx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Fallback native ms-word blob (creates a .doc file Word can parse natively)
+        const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${safeFileName}_Diligence_Report.doc`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
     }
   </script>
 </body>
