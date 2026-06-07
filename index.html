@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AngelDiligenceAI - Investment Due Diligence App</title>
+  
+  <!-- Tailwind CSS CDN for styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Marked.js CDN for Markdown Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Simple custom prose styling to match premium layout */
+    .prose h1, .prose h2, .prose h3 {
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 1.5em;
+      margin-bottom: 0.5em;
+    }
+    .prose h1 { font-size: 1.5em; }
+    .prose h2 { font-size: 1.25em; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.3em; }
+    .prose h3 { font-size: 1.1em; }
+    .prose p {
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      line-height: 1.6;
+      color: #334155;
+    }
+    .prose ul, .prose ol {
+      margin-top: 0.5em;
+      margin-bottom: 1em;
+      padding-left: 1.5em;
+    }
+    .prose ul { list-style-type: disc; }
+    .prose ol { list-style-type: decimal; }
+    .prose li {
+      margin-top: 0.25em;
+      margin-bottom: 0.25em;
+      color: #334155;
+    }
+    .prose table {
+      width: 100%;
+      margin-top: 1.5em;
+      margin-bottom: 1.5em;
+      border-collapse: collapse;
+    }
+    .prose th, .prose td {
+      border: 1px solid #e2e8f0;
+      padding: 0.75rem;
+      text-align: left;
+    }
+    .prose th {
+      background-color: #f8fafc;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+
+  <!-- Header Navigation -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shrink-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <div class="flex items-center gap-2">
+          <div class="bg-indigo-600 p-1.5 rounded-lg text-white">
+            <i data-lucide="briefcase" class="w-5 h-5"></i>
+          </div>
+          <span class="font-bold text-lg md:text-xl tracking-tight text-slate-800">
+            AngelDiligence<span class="text-indigo-600">AI</span>
+          </span>
+        </div>
+        
+        <!-- Steps Navigator -->
+        <nav class="flex space-x-4 md:space-x-8">
+          <button 
+            id="nav-setup-btn"
+            onclick="switchTab('setup')"
+            class="text-xs md:text-sm font-medium pb-5 pt-6 border-b-2 border-indigo-600 text-indigo-600 transition-all duration-200"
+          >
+            1. Setup & Data Room
+          </button>
+          <button 
+            id="nav-report-btn"
+            disabled
+            onclick="switchTab('report')"
+            class="text-xs md:text-sm font-medium pb-5 pt-6 border-b-2 border-transparent text-slate-400 hover:text-slate-600 transition-all duration-200 opacity-50 cursor-not-allowed"
+          >
+            2. Diligence Report
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Frame -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full flex flex-col">
+    
+    <!-- ================= SETUP VIEW ================= -->
+    <div id="view-setup" class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+      
+      <!-- Left Column: Setup Inputs & Category Selectors -->
+      <div class="lg:col-span-1 flex flex-col gap-6">
+        
+        <!-- Company Metadata Form -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <h2 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <i data-lucide="building-2" class="w-5 h-5 text-indigo-600"></i>
+            Target Company
+          </h2>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Company Name</label>
+              <input 
+                id="input-company-name"
+                type="text" 
+                placeholder="e.g., Acme Health"
+                oninput="updateCompanyMetadata()"
+                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Industry / Sector</label>
+              <input 
+                id="input-industry"
+                type="text" 
+                placeholder="e.g., AI Diagnostics"
+                oninput="updateCompanyMetadata()"
+                class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Room List -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex-1 flex flex-col">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <i data-lucide="folder-open" class="w-5 h-5 text-indigo-600"></i>
+              Data Room
+            </h2>
+          </div>
+          <p class="text-xs text-slate-500 mb-4">
+            Select a category below to upload files or paste document contents.
+          </p>
+          
+          <div id="category-selector-container" class="space-y-2 flex-1 overflow-y-auto max-h-[320px] lg:max-h-none">
+            <!-- Programmatically populated categories -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Document Editor and Workspace -->
+      <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden min-h-[500px]">
+        <!-- Workspace Header Actions -->
+        <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span id="current-category-icon" class="text-slate-500"></span>
+            <span id="current-category-title" class="font-medium text-slate-700 text-sm">Category Files</span>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button 
+              onclick="addBlankNote()"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+            >
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Note
+            </button>
+            <label class="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors shadow-sm">
+              <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
+              Upload Files
+              <input id="file-uploader" type="file" multiple class="hidden" onchange="handleFileUpload(event)" />
+            </label>
+          </div>
+        </div>
+        
+        <!-- File workspace area -->
+        <div id="workspace-content" class="flex-1 p-4 sm:p-5 overflow-y-auto bg-slate-50/50">
+          <!-- Empty view or File containers dynamically rendered -->
+        </div>
+        
+        <!-- Validation / Error block -->
+        <div id="validation-error-banner" class="hidden px-5 py-3 bg-rose-50 border-t border-rose-100 flex items-center gap-2 text-rose-700 text-sm">
+          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+          <span id="validation-error-text">Please input company parameters.</span>
+        </div>
+
+        <!-- Footer Control Area -->
+        <div class="bg-white px-5 py-4 border-t border-slate-200 flex justify-between items-center">
+          <span class="text-xs text-slate-400 hidden sm:inline" id="file-stats-summary">
+            Total files uploaded: 0
+          </span>
+          <button
+            id="start-analysis-btn"
+            onclick="triggerAnalysis()"
+            class="bg-slate-200 text-slate-400 cursor-not-allowed flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-all shadow-sm text-sm ml-auto"
+            disabled
+          >
+            <i data-lucide="play" class="w-4 h-4"></i> Start AI Diligence
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= ANALYZE/PROCESSING VIEW ================= -->
+    <div id="view-analyze" class="hidden max-w-3xl mx-auto py-12 w-full">
+      <div class="text-center mb-12">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 mb-4">
+          <i data-lucide="briefcase" class="w-8 h-8 text-indigo-600"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">Conducting Due Diligence</h2>
+        <p class="text-slate-500">
+          Synthesizing data room files and executing market intelligence research via Google Search...
+        </p>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+        <!-- Phase 1 status -->
+        <div class="flex items-start gap-4">
+          <div class="mt-1 shrink-0" id="phase1-status-icon">
+            <i data-lucide="circle" class="w-6 h-6 text-slate-300"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-base md:text-lg text-slate-500" id="phase1-title">
+              Phase 1: Industry Overview & TAM Analysis
+            </h3>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">Market size, structural CAGR projections, and regulatory trends.</p>
+            <div id="phase1-activity" class="hidden mt-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs md:text-sm text-indigo-800 flex items-center gap-2">
+              <div class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></div>
+              Gathering industry intelligence & scaling market vectors...
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 2 status -->
+        <div class="flex items-start gap-4 border-t border-slate-100 pt-6">
+          <div class="mt-1 shrink-0" id="phase2-status-icon">
+            <i data-lucide="circle" class="w-6 h-6 text-slate-300"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-base md:text-lg text-slate-500" id="phase2-title">
+              Phase 2: Competitor Landscape Mapping
+            </h3>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">Rival matrix classification, distribution structures, and market gaps.</p>
+            <div id="phase2-activity" class="hidden mt-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs md:text-sm text-indigo-800 flex items-center gap-2">
+              <div class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></div>
+              Identifying market gaps, substitutes and direct rivals...
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 3 status -->
+        <div class="flex items-start gap-4 border-t border-slate-100 pt-6">
+          <div class="mt-1 shrink-0" id="phase3-status-icon">
+            <i data-lucide="circle" class="w-6 h-6 text-slate-300"></i>
+          </div>
+          <div class="flex-1">
+            <h3 class="font-semibold text-base md:text-lg text-slate-500" id="phase3-title">
+              Phase 3: Leadership & Organizational Health
+            </h3>
+            <p class="text-xs md:text-sm text-slate-400 mt-1">Track record profile, team gaps, and strategic key-person dependency.</p>
+            <div id="phase3-activity" class="hidden mt-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-xs md:text-sm text-indigo-800 flex items-center gap-2">
+              <div class="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></div>
+              Profiling management capability, past exits & governance gaps...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= REPORT VIEW ================= -->
+    <div id="view-report" class="hidden space-y-8 pb-12 w-full">
+      <div class="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-200 pb-6 gap-4">
+        <div>
+          <h1 id="report-header-title" class="text-2xl md:text-3xl font-bold text-slate-800">Diligence Report: Target</h1>
+          <p id="report-header-meta" class="text-slate-500 mt-2 text-base md:text-lg">Industry: Sector</p>
+        </div>
+        <div class="flex gap-3">
+          <button 
+            onclick="switchTab('setup')"
+            class="px-4 py-2 text-xs md:text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-2"
+          >
+            <i data-lucide="edit-3" class="w-4 h-4"></i> Edit Workspace
+          </button>
+          <button 
+            onclick="triggerAnalysis()"
+            class="px-4 py-2 text-xs md:text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-all shadow-sm"
+          >
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Re-run Analysis
+          </button>
+        </div>
+      </div>
+
+      <!-- Report Content Sections -->
+      <div id="report-chapters-container" class="space-y-8">
+        <!-- Chapters loaded dynamically -->
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Executed context auto-injects empty API key, relying on native Gemini client runtime values.
+    const API_KEY = ""; 
+    // Gemini 3 Flash is ideal for grounded web queries
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`;
+
+    const DATA_ROOM_CATEGORIES = [
+      { id: 'pitch_deck', name: 'Pitch Deck', icon: 'presentation' },
+      { id: 'people', name: 'People', icon: 'users' },
+      { id: 'fundraising', name: 'Fundraising', icon: 'banknote' },
+      { id: 'financials', name: 'Financials', icon: 'line-chart' },
+      { id: 'corporate_legal', name: 'Corporate & Legal', icon: 'scale' },
+      { id: 'clients_sales', name: 'Clients & Sales', icon: 'briefcase' }
+    ];
+
+    const DILIGENCE_PHASES = [
+      {
+        id: 'phase1',
+        title: 'Phase 1: Industry Overview & TAM Analysis',
+        icon: 'bar-chart-3',
+        focus: 'Market size (TAM, SAM, SOM), CAGR projections, structural cost drivers, and geographical regulatory tailwinds.',
+        inputs: 'Equity research reports, industry databases (e.g., IBISWorld, PitchBook), regulatory updates.',
+        promptTemplate: (companyContext, industry) => `Act as a senior market research analyst. Provide a detailed industry analysis for the ${industry} industry, specifically concerning the company context provided below. Identify the Total Addressable Market (TAM) using credible, cited sources. Outline the primary industry drivers, regulatory headwinds, and cost structures over a 3-to-5 year outlook. Score the top 5 emerging risks on a scale of 1-5. Avoid general summaries; present findings in a structured, quantitative table where possible. Integrate references to standard industry data points.\n\nCompany Context/Data Room Information:\n${companyContext}`
+      },
+      {
+        id: 'phase2',
+        title: 'Phase 2: Competitor Landscape Mapping',
+        icon: 'target',
+        focus: 'Competitor identification (direct, indirect, and substitute), pricing structures, feature parity, and market positioning.',
+        inputs: 'Competitor pricing pages, product specification sheets, G2/Capterra marketing claims.',
+        promptTemplate: (companyContext, companyName) => `Act as a competitive intelligence specialist. Analyze the competitive landscape for ${companyName} using search insights to discover direct, indirect, and substitute competitors based on the context provided. Build a structured comparison matrix of feature parity, and evaluate pricing strategies, distribution models, and target audience alignment. Highlight the primary market gap or underserved segment that ${companyName} is positioned to capture.\n\nCompany Context/Data Room Information:\n${companyContext}`
+      },
+      {
+        id: 'phase3',
+        title: 'Phase 3: Leadership & Organizational Health',
+        icon: 'users',
+        focus: 'Executive track record, team cohesion, critical talent gaps, and key-person execution dependency.',
+        inputs: 'Executive biographies, past exit records, organizational charts, key employment agreements.',
+        promptTemplate: (companyContext, companyName) => `Act as an organizational behavior consultant. Evaluate the leadership team of ${companyName} based on the provided data room contents. Review the backgrounds of key founders/executives (CEO, CTO, CFO). Analyze their combined domain experience, past exit history, and execution track record. Highlight any critical organizational talent gaps, key-person dependency risks, or misalignments in equity.\n\nCompany Context/Data Room Information:\n${companyContext}`
+      }
+    ];
+
+    // App State
+    let state = {
+      activeTab: 'setup',
+      companyName: '',
+      industry: '',
+      selectedCategoryId: 'pitch_deck',
+      documents: [],
+      validationError: '',
+      analysisResults: {},
+      isAnalyzing: false,
+      currentAnalyzingPhase: null
+    };
+
+    // Initialize application interface
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCategorySelectors();
+      updateWorkspaceView();
+      lucide.createIcons();
+    });
+
+    // Populate left side categories
+    function renderCategorySelectors() {
+      const container = document.getElementById('category-selector-container');
+      container.innerHTML = '';
+      
+      DATA_ROOM_CATEGORIES.forEach(category => {
+        const categoryDocs = state.documents.filter(d => d.categoryId === category.id);
+        const docCount = categoryDocs.length;
+        const hasContent = categoryDocs.some(d => d.content.trim() !== '');
+        const isActive = state.selectedCategoryId === category.id;
+        
+        const activeClasses = 'bg-indigo-50 border-indigo-200 text-indigo-700';
+        const inactiveClasses = 'hover:bg-slate-50 border-transparent text-slate-700';
+        
+        const card = document.createElement('button');
+        card.className = `w-full text-left px-3 py-3 rounded-lg flex items-center gap-3 transition-colors border ${isActive ? activeClasses : inactiveClasses}`;
+        card.onclick = () => {
+          state.selectedCategoryId = category.id;
+          renderCategorySelectors();
+          updateWorkspaceView();
+        };
+
+        const iconColor = hasContent ? 'text-emerald-500' : 'text-slate-400';
+        
+        card.innerHTML = `
+          <div class="${iconColor}">
+            <i data-lucide="${category.icon}" class="w-4 h-4"></i>
+          </div>
+          <span class="text-sm font-medium truncate flex-1">${category.name}</span>
+          ${docCount > 0 ? `
+            <span class="text-xs px-2 py-0.5 rounded-full ${hasContent ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}">
+              ${docCount}
+            </span>
+          ` : ''}
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // Workspace view (Right block of setup screen)
+    function updateWorkspaceView() {
+      const selectedCategory = DATA_ROOM_CATEGORIES.find(c => c.id === state.selectedCategoryId);
+      const categoryDocs = state.documents.filter(d => d.categoryId === state.selectedCategoryId);
+
+      // Icon update
+      const iconHeader = document.getElementById('current-category-icon');
+      iconHeader.innerHTML = `<i data-lucide="${selectedCategory.icon}" class="w-4 h-4"></i>`;
+      
+      // Title update
+      document.getElementById('current-category-title').innerText = `${selectedCategory.name} Files`;
+
+      const workspace = document.getElementById('workspace-content');
+      
+      if (categoryDocs.length === 0) {
+        workspace.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-xl bg-white p-8">
+            <div class="p-3 bg-slate-50 rounded-full text-slate-400 mb-3">
+              <i data-lucide="upload-cloud" class="w-8 h-8"></i>
+            </div>
+            <p class="text-sm font-medium text-slate-700">No files in ${selectedCategory.name}</p>
+            <p class="text-xs mt-1 text-slate-500 max-w-sm">
+              Upload files (.txt, .md, .csv) or create a blank note to paste information directly.
+            </p>
+          </div>
+        `;
+      } else {
+        workspace.innerHTML = '';
+        categoryDocs.forEach(doc => {
+          const docWrapper = document.createElement('div');
+          docWrapper.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-4";
+          docWrapper.innerHTML = `
+            <div class="bg-slate-50/80 px-4 py-2.5 border-b border-slate-200 flex justify-between items-center group">
+              <div class="flex items-center gap-2 flex-1">
+                <i data-lucide="file-text" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                <input
+                  type="text"
+                  class="text-sm font-medium bg-transparent border-none outline-none focus:bg-slate-100 focus:ring-1 focus:ring-indigo-500 px-1.5 py-0.5 rounded text-slate-700 w-full transition-colors"
+                  value="${doc.name}"
+                  onchange="updateDocumentName('${doc.id}', this.value)"
+                />
+              </div>
+              <button 
+                onclick="removeDocument('${doc.id}')" 
+                class="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition-all ml-2"
+                title="Remove file"
+              >
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <textarea
+              oninput="updateDocumentContent('${doc.id}', this.value)"
+              placeholder="Paste or edit document text here..."
+              class="w-full p-4 resize-y min-h-[120px] outline-none text-slate-700 font-mono text-xs leading-relaxed focus:bg-indigo-50/5 transition-colors"
+            >${doc.content}</textarea>
+          `;
+          workspace.appendChild(docWrapper);
+        });
+      }
+      
+      // Update footer counts
+      document.getElementById('file-stats-summary').innerText = `Total files uploaded: ${state.documents.length}`;
+      validateWorkspace();
+      lucide.createIcons();
+    }
+
+    // Helper to read and extract data room documents
+    function readFileAsText(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          let text = e.target.result;
+          // Clean non-printable block signs if PDF raw binary got uploaded directly
+          if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+            text = `[PDF Context Detected: ${file.name}]\n\nDirect PDF parsing is limited within pure browser clients. Please consider manually pasting text slides below for the most thorough analysis.\n\n--- Partially Extracted Data ---\n` + text.substring(0, 1500) + `... [TRUNCATED]`;
+          }
+          resolve(text);
+        };
+        reader.onerror = () => resolve(`[Failed to read contents of ${file.name}]`);
+        reader.readAsText(file);
+      });
+    }
+
+    async function handleFileUpload(event) {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
+
+      setValidationError('');
+      
+      const newDocs = await Promise.all(files.map(async (file) => {
+        const textContent = await readFileAsText(file);
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          categoryId: state.selectedCategoryId,
+          name: file.name,
+          content: textContent
+        };
+      }));
+
+      state.documents = [...state.documents, ...newDocs];
+      event.target.value = ''; // clear input
+      
+      renderCategorySelectors();
+      updateWorkspaceView();
+    }
+
+    function addBlankNote() {
+      setValidationError('');
+      const newNote = {
+        id: Math.random().toString(36).substr(2, 9),
+        categoryId: state.selectedCategoryId,
+        name: 'New Note.txt',
+        content: ''
+      };
+      state.documents.push(newNote);
+      renderCategorySelectors();
+      updateWorkspaceView();
+    }
+
+    function removeDocument(id) {
+      state.documents = state.documents.filter(d => d.id !== id);
+      renderCategorySelectors();
+      updateWorkspaceView();
+    }
+
+    function updateDocumentName(id, newName) {
+      state.documents = state.documents.map(d => d.id === id ? { ...d, name: newName } : d);
+      renderCategorySelectors();
+    }
+
+    function updateDocumentContent(id, content) {
+      state.documents = state.documents.map(d => d.id === id ? { ...d, content: content } : d);
+      validateWorkspace();
+      
+      // Update badge indicator status programmatically to avoid resetting scroll position
+      const categorySelectorBtn = document.querySelector(`[onclick*="state.selectedCategoryId = '${state.selectedCategoryId}'"]`);
+      if (categorySelectorBtn) {
+        const iconDiv = categorySelectorBtn.querySelector('div');
+        const hasContentNow = state.documents.some(d => d.categoryId === state.selectedCategoryId && d.content.trim() !== '');
+        if (hasContentNow) {
+          iconDiv.className = 'text-emerald-500';
+        } else {
+          iconDiv.className = 'text-slate-400';
+        }
+      }
+    }
+
+    function updateCompanyMetadata() {
+      state.companyName = document.getElementById('input-company-name').value;
+      state.industry = document.getElementById('input-industry').value;
+      validateWorkspace();
+    }
+
+    function setValidationError(msg) {
+      state.validationError = msg;
+      const banner = document.getElementById('validation-error-banner');
+      const text = document.getElementById('validation-error-text');
+      
+      if (msg) {
+        text.innerText = msg;
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function validateWorkspace() {
+      const startBtn = document.getElementById('start-analysis-btn');
+      const hasData = state.documents.some(d => d.content.trim() !== '');
+      const isSetupComplete = state.companyName.trim() !== '' && state.industry.trim() !== '';
+
+      if (isSetupComplete && hasData) {
+        startBtn.classList.remove('bg-slate-200', 'text-slate-400', 'cursor-not-allowed');
+        startBtn.classList.add('bg-indigo-600', 'text-white', 'hover:bg-indigo-700', 'cursor-pointer');
+        startBtn.disabled = false;
+        setValidationError('');
+      } else {
+        startBtn.classList.add('bg-slate-200', 'text-slate-400', 'cursor-not-allowed');
+        startBtn.classList.remove('bg-indigo-600', 'text-white', 'hover:bg-indigo-700', 'cursor-pointer');
+        startBtn.disabled = true;
+      }
+    }
+
+    // Helper to form complete raw prompt context
+    function getCombinedContext() {
+      return state.documents
+        .filter(doc => doc.content.trim() !== '')
+        .map(doc => `--- Category: ${DATA_ROOM_CATEGORIES.find(c => c.id === doc.categoryId)?.name} | File: ${doc.name} ---\n${doc.content}`)
+        .join('\n\n');
+    }
+
+    async function triggerAnalysis() {
+      const hasData = state.documents.some(d => d.content.trim() !== '');
+      const isSetupComplete = state.companyName.trim() !== '' && state.industry.trim() !== '';
+
+      if (!isSetupComplete) {
+        setValidationError('Please specify the Company Name and Sector first.');
+        return;
+      }
+      if (!hasData) {
+        setValidationError('Please upload at least one document or draft notes in the data room.');
+        return;
+      }
+
+      setValidationError('');
+      switchTab('analyze');
+      state.isAnalyzing = true;
+      resetTimelineStates();
+
+      const context = getCombinedContext();
+
+      // Sequential execution through diligence phases
+      for (const phase of DILIGENCE_PHASES) {
+        updateTimelineStep(phase.id, 'active');
+        
+        let prompt = '';
+        if (phase.id === 'phase1') {
+          prompt = phase.promptTemplate(context, state.industry);
+        } else {
+          prompt = phase.promptTemplate(context, state.companyName);
+        }
+
+        const payload = {
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ google_search: {} }]
+        };
+
+        let attempt = 0;
+        const maxRetries = 4;
+        let success = false;
+
+        while (attempt < maxRetries && !success) {
+          try {
+            const response = await fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error(`Status ${response.status}`);
+
+            const responseData = await response.json();
+            const candidate = responseData.candidates?.[0];
+
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+              state.analysisResults[phase.id] = {
+                status: 'complete',
+                text: candidate.content.parts[0].text,
+                sources: candidate.groundingMetadata?.groundingAttributions?.map(attr => attr.web).filter(Boolean) || []
+              };
+              updateTimelineStep(phase.id, 'success');
+              success = true;
+            } else {
+              throw new Error("No text output on candidates response");
+            }
+          } catch (err) {
+            attempt++;
+            if (attempt >= maxRetries) {
+              console.error(`Error processing ${phase.id}:`, err);
+              state.analysisResults[phase.id] = {
+                status: 'error',
+                text: `Could not retrieve analysis details: ${err.message}. Please restart the investigation step.`,
+                sources: []
+              };
+              updateTimelineStep(phase.id, 'error');
+            } else {
+              // Delay wait with basic exponential backoff
+              await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000));
+            }
+          }
+        }
+
+        // Delay to make transitions smoother
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      state.isAnalyzing = false;
+      buildDiligenceReport();
+      switchTab('report');
+    }
+
+    // Reset indicators before starting sequence
+    function resetTimelineStates() {
+      DILIGENCE_PHASES.forEach(p => {
+        document.getElementById(`${p.id}-status-icon`).innerHTML = `<i data-lucide="circle" class="w-6 h-6 text-slate-300"></i>`;
+        document.getElementById(`${p.id}-title`).className = "font-semibold text-base md:text-lg text-slate-500";
+        document.getElementById(`${p.id}-activity`).classList.add('hidden');
+      });
+      lucide.createIcons();
+    }
+
+    // Toggle active timeline visual steps
+    function updateTimelineStep(phaseId, status) {
+      const icon = document.getElementById(`${phaseId}-status-icon`);
+      const title = document.getElementById(`${phaseId}-title`);
+      const activity = document.getElementById(`${phaseId}-activity`);
+
+      if (status === 'active') {
+        icon.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 text-indigo-600 animate-spin"></i>`;
+        title.className = "font-semibold text-base md:text-lg text-indigo-700";
+        activity.classList.remove('hidden');
+      } else if (status === 'success') {
+        icon.innerHTML = `<i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-500"></i>`;
+        title.className = "font-semibold text-base md:text-lg text-slate-800";
+        activity.classList.add('hidden');
+      } else if (status === 'error') {
+        icon.innerHTML = `<i data-lucide="alert-triangle" class="w-6 h-6 text-rose-500"></i>`;
+        title.className = "font-semibold text-base md:text-lg text-rose-600";
+        activity.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    // Build report dynamically from complete analyses
+    function buildDiligenceReport() {
+      // Set main metadata headers
+      document.getElementById('report-header-title').innerText = `Diligence Report: ${state.companyName}`;
+      document.getElementById('report-header-meta').innerText = `Industry: ${state.industry}`;
+
+      const container = document.getElementById('report-chapters-container');
+      container.innerHTML = '';
+
+      DILIGENCE_PHASES.forEach(phase => {
+        const result = state.analysisResults[phase.id];
+        if (!result) return;
+
+        const section = document.createElement('div');
+        section.className = "bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden";
+        
+        let markdownHTML = '';
+        if (result.status === 'error') {
+          markdownHTML = `
+            <div class="bg-red-50 text-red-700 p-4 rounded-lg border border-red-100 flex items-start gap-3">
+              <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+              <p class="text-sm">${result.text}</p>
+            </div>
+          `;
+        } else {
+          // Parse using Marked parser CDN safely
+          markdownHTML = `<div class="prose max-w-none">${marked.parse(result.text)}</div>`;
+        }
+
+        // Citations builder
+        let citationsHTML = '';
+        if (result.sources && result.sources.length > 0) {
+          citationsHTML = `
+            <div class="mt-8 pt-6 border-t border-slate-100">
+              <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Grounding Sources Consulted</h4>
+              <ul class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                ${result.sources.map(src => `
+                  <li class="flex items-start gap-2">
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+                    <a href="${src.uri}" target="_blank" rel="noopener noreferrer" class="text-xs md:text-sm text-indigo-600 hover:underline truncate">
+                      ${src.title || src.uri}
+                    </a>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          `;
+        }
+
+        section.innerHTML = `
+          <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex items-center gap-3">
+            <div class="p-2 bg-indigo-100 text-indigo-700 rounded-lg shrink-0">
+              <i data-lucide="${phase.icon}"></i>
+            </div>
+            <h2 class="text-lg md:text-xl font-bold text-slate-800">${phase.title}</h2>
+          </div>
+          <div class="p-6">
+            ${markdownHTML}
+            ${citationsHTML}
+          </div>
+        `;
+        
+        container.appendChild(section);
+      });
+      lucide.createIcons();
+    }
+
+    // Handles tab panel switching
+    function switchTab(targetTab) {
+      if (state.isAnalyzing) return; // Prevent navigation while running
+
+      state.activeTab = targetTab;
+      
+      const views = ['setup', 'analyze', 'report'];
+      views.forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+      });
+      document.getElementById(`view-${targetTab}`).classList.remove('hidden');
+
+      // Update Nav Class Highlights
+      const navSetup = document.getElementById('nav-setup-btn');
+      const navReport = document.getElementById('nav-report-btn');
+
+      if (targetTab === 'setup') {
+        navSetup.className = "text-xs md:text-sm font-medium pb-5 pt-6 border-b-2 border-indigo-600 text-indigo-600 transition-all duration-200";
+      } else {
+        navSetup.className = "text-xs md:text-sm font-medium pb-5 pt-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-all duration-200";
+      }
+
+      const hasReportData = Object.keys(state.analysisResults).length > 0;
+      if (hasReportData) {
+        navReport.disabled = false;
+        navReport.classList.remove('opacity-50', 'cursor-not-allowed');
+        if (targetTab === 'report') {
+          navReport.className = "text-xs md:text-sm font-medium pb-5 pt-6 border-b-2 border-indigo-600 text-indigo-600 transition-all duration-200";
+        } else {
+          navReport.className = "text-xs md:text-sm font-medium pb-5 pt-6 border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-all duration-200";
+        }
+      } else {
+        navReport.disabled = true;
+        navReport.classList.add('opacity-50', 'cursor-not-allowed');
+        navReport.className = "text-xs md:text-sm font-medium pb-5 pt-6 border-b-2 border-transparent text-slate-400 transition-all duration-200 cursor-not-allowed opacity-50";
+      }
+      
+      if (targetTab === 'setup') {
+        updateWorkspaceView();
+      }
+      window.scrollTo(0, 0);
+    }
+  </script>
+</body>
+</html>
